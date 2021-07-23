@@ -163,7 +163,7 @@ class Coco:
             a descriptor vector of the image as provided by RESNET
         """
         if image_id not in self.resnet18_features.keys():
-            return np.zeros((512,))
+            return np.zeros((1, 512))
         else:
             return self.resnet18_features[image_id]
     
