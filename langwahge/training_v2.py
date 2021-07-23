@@ -1,7 +1,7 @@
 from langwahge.model import Model, loss_accuracy
 from mynn.optimizers.sgd import SGD
 import numpy as np
-import coco_data
+import .coco_data
 import random
 
 def save_weights(model):
@@ -40,8 +40,8 @@ def load_weights(weights):
 
 # from noggin import create_plot
 # plotter, fig, ax = create_plot(metrics=["loss"], max_fraction_spent_plotting=.75)
-
-data = coco_data()
+# plotter, fig, ax = create_plot(metrics=["loss", "accuracy"],  max_fraction_spent_plotting=.75)
+data = Coco_Data()
 _, glove, resnet18_features, imgid_to_capid, capid_to_imgid, capid_to_capstr, _ = data.get_data()
 
 triplets = []
@@ -89,8 +89,6 @@ for epoch in range(num_epochs):
         
         optim.step()
         
-        # plotter.set_train_batch({"loss" : loss.item()
-        #                          },
-        #                          batch_size=batch_size)
+        #plotter.set_train_batch({"loss" : loss.item(), "accuracy" : acc}, batch_size=batch_size)
 
 filename = save_weights(model)

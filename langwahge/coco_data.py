@@ -7,10 +7,76 @@ import pickle
 import numpy as np
 import random
 import mygrad as mg
-punc_regex = re.compile('[{}]'.format(re.escape(string.punctuation)))
 
-class coco_data:
-    def init(self): 
+class Coco_Data:
+    punc_regex = re.compile('[{}]'.format(re.escape(string.punctuation)))
+    
+    def get_idf(self):
+        """ 
+        Given the vocabulary, and the word-counts for each document, computes
+        the inverse document frequency (IDF) for each term in the vocabulary.
+        
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        nt: dict{string, float}
+            A dictionary storing the IDF for each term in vocab
+        """
+        nt = {}
+        N = len(self.counters)
+        for t in self.vocab:
+            total = 0
+            for counter in self.counters:
+                if t in counter:
+                    total += 1
+
+            nt[t] = np.log10(N / total)
+
+        return nt
+    
+    def to_counter(self, doc):
+        """ 
+        Produce word-count of document, removing all punctuation
+        and making all the characters lower-cased.
+        
+        Parameters
+        ----------
+        doc : str
+        
+        Returns
+        -------
+        collections.Counter
+            lower-cased word -> count
+        """
+        return Counter(self.strip_punc(doc).lower().split())
+
+    def to_vocab(self, counters, k=None):
+        """ 
+        Convert a collection of counters to a sorted list of the top-k most common words 
+        
+        Parameters
+        ----------
+        counters : Sequence[collections.Counter]
+            A list of counters; each one is a word tally for a document
+        
+        k : Optional[int]
+            If specified, only the top-k words are returned
+            
+        Returns
+        -------
+        List[str]
+            A sorted list of the unique strings.
+        """
+        vocab = Counter()
+        for counter in counters:
+            vocab.update(counter)
+            
+        return sorted(i for i,j in vocab.most_common(k))
+
+    def __init__(self): 
         """
         load COCO metadata (json file ["images"] ["annotations"])
         load glove data (dictionary {word : word_embedding})
@@ -32,14 +98,14 @@ class coco_data:
         None
         """
         # load COCO metadata
-        with Path("data/captions_train2014.json").open() as f:
+        with Path(r"C:\Users\nicho\Downloads\captions_train2014.json").open() as f:
             self.coco_data = json.load(f)
         
         # load GloVe-200 embeddings
-        self.glove = KeyedVectors.load_word2vec_format("data/glove.6B.200d.txt.w2v", binary=False)
+        self.glove = KeyedVectors.load_word2vec_format(r"C:\Users\nicho\Downloads\glove.6B.200d.txt.w2v", binary=False)
 
         # load image descriptor vectors
-        with Path('data/resnet18_features.pkl').open('rb') as f:
+        with Path(r"C:\Users\nicho\Downloads\resnet18_features.pkl").open('rb') as f:
             self.resnet18_features = pickle.load(f)
         
         self.imgid_to_capid = {}
@@ -49,7 +115,7 @@ class coco_data:
 
         for caption in self.coco_data["annotations"]:
             # input caption_id to imgid_to_capid if the img_id key exists
-            if self.imgid_to_capid.contains(caption["image_id"]):
+            if self.imgid_to_capid.__contains__(caption["image_id"]):
                 self.imgid_to_capid[caption["image_id"]].append(caption["id"])
             # else create new img_id object and create new caption_id list
             else:
@@ -59,10 +125,10 @@ class coco_data:
             self.capid_to_imgid[caption["id"]] = caption["image_id"]
             # input caption to capid_to_capstr
             self.capid_to_capstr[caption["id"]] = caption["caption"]
+    
+            self.counters.append(self.to_counter(caption))
 
-            self.counters.append(to_counter(caption))
-
-        self.vocab = to_vocab(self.counters)
+        self.vocab = self.to_vocab(self.counters)
         
     def random_pair(self):
         """
@@ -105,7 +171,7 @@ class coco_data:
         else:
             return self.resnet18_features[image_id]
 
-    def strip_punc(corpus):
+    def strip_punc(self, corpus):
         """ 
         Removes all punctuation from a string.
 
@@ -119,7 +185,7 @@ class coco_data:
             the corpus with all punctuation removed
         """
         # substitute all punctuation marks with ""
-        return punc_regex.sub('', corpus)
+        return self.punc_regex.sub('', corpus)
 
     def embed_text(self, text_string):
         """
@@ -157,71 +223,6 @@ class coco_data:
 
         # return normal_text_embedding
         return normal_text_embedding
-
-    def to_counter(doc):
-        """ 
-        Produce word-count of document, removing all punctuation
-        and making all the characters lower-cased.
-        
-        Parameters
-        ----------
-        doc : str
-        
-        Returns
-        -------
-        collections.Counter
-            lower-cased word -> count
-        """
-        return Counter(strip_punc(doc).lower().split())
-
-    def to_vocab(counters, k=None):
-        """ 
-        Convert a collection of counters to a sorted list of the top-k most common words 
-        
-        Parameters
-        ----------
-        counters : Sequence[collections.Counter]
-            A list of counters; each one is a word tally for a document
-        
-        k : Optional[int]
-            If specified, only the top-k words are returned
-            
-        Returns
-        -------
-        List[str]
-            A sorted list of the unique strings.
-        """
-        vocab = Counter()
-        for counter in counters:
-            vocab.update(counter)
-            
-        return sorted(i for i,j in vocab.most_common(k))
-
-    def get_idf(self):
-        """ 
-        Given the vocabulary, and the word-counts for each document, computes
-        the inverse document frequency (IDF) for each term in the vocabulary.
-        
-        Parameters
-        ----------
-        None
-        
-        Returns
-        -------
-        nt: dict{string, float}
-            A dictionary storing the IDF for each term in vocab
-        """
-        nt = {}
-        N = len(self.counters)
-        for t in self.vocab:
-            total = 0
-            for counter in self.counters:
-                if t in counter:
-                    total += 1
-
-            nt[t] = np.log10(N / total)
-
-        return nt
 
     def get_data(self):
         """
