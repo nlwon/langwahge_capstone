@@ -73,7 +73,10 @@ coco_data, glove, resnet18_features, imgid_to_capid, capid_to_imgid, capid_to_ca
 split_at = 0.75
 split = int(len(resnet18_features)*split_at)
 training_vectors = resnet18_features[:split]      #if this doesn't work for some reason could just hardcode
+training_captions = 
+
 test_vectors = resnet18_features[split:82600]
+test_captions = 
 
 match = 0
 triplets = 0
@@ -84,6 +87,7 @@ for epoch in range(10000):
         batch_indexes = indexes[batch_count*batch_size: batch_count*(batch_size+1)]
         batch = training_vectors[batch_indexes]  
 #         print(batch)
+        w_caption = training_captions[i]
         prediction = model(batch)
         
         confuser = model(resnet18_features[random.choice(list(resnet18_features)[:82600])])  
