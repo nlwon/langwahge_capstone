@@ -81,7 +81,7 @@ Create a class that organizes all of the COCO data. It might store the following
 
 Model: in a Jupyter Notebook:
 
-    Create a MyNN model for embedding image descriptors: d⃗ img→w^img
+    (X)Create a MyNN model for embedding image descriptors: d⃗ img→w^img
         init()
             dense layer no bias, forward pass requires no activation func
 
@@ -91,32 +91,31 @@ Model: in a Jupyter Notebook:
         parameters()
             return trainable params
 
-    loss_accuracy(sim_match, sim_confuse, threshold), returns loss and accuracy
+    (X) loss_accuracy(sim_match, sim_confuse, threshold, triplets), returns loss and accuracy
         loss = max(0, threshold - (sim_match - sim_confuse))
         accuracy = #sim_match>sim_confuse / number of triplets
 
     Training the model:
-        create_sets(), returns 
+        (X) create_sets(), returns 
             *separate out image IDs into distinct sets for training and validation
 
-        get the caption embedding (from database)
+        (X) get the caption embedding (from database)
             use embed_text(caption_embedding) for labels of images
         
-        embed the “true” image (through model)
+        (X) embed the “true” image (through model)
 
-        embed the “confusor” image (through model)
-        (normalize all 3)  
+        (X) embed the “confusor” image (through model)
                         
-        compute similarities (caption and good image, caption and bad image)
+        (X) compute similarities (caption and good image, caption and bad image)
             sim_match = w_caption*w_img
             sim_confuse = w_caption*w_img_confuse
             delta threshold
 
-        compute margin-ranking loss and accuracy
+        (X) compute margin-ranking loss and accuracy
             loss_accuracy()
 
-        take optimization step
-        (USE ADAM OPTIMIZER)
+        (X) take optimization step
+        (USE SGD OPTIMIZER)
 
     Write functionality for saving / loading trained model weights
 
