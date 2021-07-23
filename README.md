@@ -36,7 +36,7 @@ You can read more about the basics of creating a Python package [here](https://w
 
 # Planning
 
-(X) COCO_DATA.PY: Create a class that organizes all of the COCO data. It might store the following
+(X) COCO.PY: Create a class that organizes all of the COCO data. It might store the following
 
     (X) init(), initialize coco_data, glove, and resnet18_features
         *load in coco data from captions_train2014.json (["images"] id/url/shape & /["annotations"] id/image_id/string)
@@ -96,6 +96,7 @@ You can read more about the basics of creating a Python package [here](https://w
         accuracy = #sim_match>sim_confuse / number of triplets
 
 TRAINING_V2: Training the model in a jupyter notebook
+    (X) Make triplets [TESTED]
     (X) create_sets(), returns 
         *separate out image IDs into distinct sets for training and validation
 

@@ -8,7 +8,7 @@ import numpy as np
 import random
 import mygrad as mg
 
-class Coco_Data:
+class Coco:
     punc_regex = re.compile('[{}]'.format(re.escape(string.punctuation)))
     
     def get_idf(self):
@@ -36,6 +36,23 @@ class Coco_Data:
             nt[t] = np.log10(N / total)
 
         return nt
+    
+    def strip_punc(self, corpus):
+        """ 
+        Removes all punctuation from a string.
+
+        Parameters
+        ----------
+        corpus : str
+
+        Returns
+        -------
+        str
+            the corpus with all punctuation removed
+        """
+        # substitute all punctuation marks with ""
+        
+        return self.punc_regex.sub('', str(corpus))
     
     def to_counter(self, doc):
         """ 
@@ -170,22 +187,6 @@ class Coco_Data:
             return np.zeros((512,))
         else:
             return self.resnet18_features[image_id]
-
-    def strip_punc(self, corpus):
-        """ 
-        Removes all punctuation from a string.
-
-        Parameters
-        ----------
-        corpus : str
-
-        Returns
-        -------
-        str
-            the corpus with all punctuation removed
-        """
-        # substitute all punctuation marks with ""
-        return self.punc_regex.sub('', corpus)
 
     def embed_text(self, text_string):
         """

@@ -115,14 +115,14 @@ class Coco:
         None
         """
         # load COCO metadata
-        with Path(r"INPUT FILEPATH").open() as f:
+        with Path(r"data/captions_train2014.json").open() as f:
             self.coco_data = json.load(f)
         
         # load GloVe-200 embeddings
-        self.glove = KeyedVectors.load_word2vec_format(r"INPUT FILEPATH", binary=False)
+        self.glove = KeyedVectors.load_word2vec_format(r"data/glove.6B.200d.txt.w2v", binary=False)
 
         # load image descriptor vectors
-        with Path(r"INPUT FILEPATH").open('rb') as f:
+        with Path(r"data/resnet18_features.pkl").open('rb') as f:
             self.resnet18_features = pickle.load(f)
         
         self.imgid_to_capid = {}

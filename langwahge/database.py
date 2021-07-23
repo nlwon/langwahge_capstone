@@ -9,7 +9,7 @@ from matplotlib.patches import Rectangle
 # import skimage.io as io
 import pathlib 
 import numpy as np
-from .coco_data import *
+from .coco import *
 
 def initialize_database(): 
     """
@@ -152,9 +152,12 @@ def query_database(text):
 
      Parameters
      ---------
+     text: string
+     caption to match an image to
 
      Returns 
      -----
+     imageid
      """
      
 
