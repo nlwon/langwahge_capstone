@@ -61,6 +61,7 @@ def loss_accuracy(sim_match, sim_confuse, threshold, triplets = 0):
 
 model = Model(input_dim = 512, output_dim = 200)
 optim = SGD(model.parameters, learning_rate = 1e-3, momentum = 0.9)
+
 from noggin import create_plot
 plotter, fig, ax = create_plot(metrics=["loss"], max_fraction_spent_plotting=.75)
 
@@ -69,9 +70,13 @@ batch_size = 32
 data = coco_data()
 coco_data, glove, resnet18_features, imgid_to_capid, capid_to_imgid, capid_to_capstr, counters = data.get_self()
 #split the data
-training_vectors = resnet18_features[:61959]
-test_vectors = resnet18_features[61959:82600]
+split_at = 0.75
+split = int(len(resnet18_features)*split_at)
+training_vectors = resnet18_features[:split]      #if this doesn't work for some reason could just hardcode
+test_vectors = resnet18_features[split:82600]
 
+match = 0
+triplets = 0
 for epoch in range(10000):
     indexes = np.arange((len(training_vectors)))
     np.random.shuffle(indexes)
@@ -86,6 +91,10 @@ for epoch in range(10000):
         sim_match = w_caption@prediction
         sim_confuse = w_caption@confuser
         
+        if sim_match>sim_confuse:  #accuracy?
+            match+=1
+        triplets+=1
+        
         loss = loss_accuracy(sim_match, sim_confuse, 0.25)
         
         loss.backward()
@@ -97,3 +106,4 @@ for epoch in range(10000):
         plotter.set_train_batch({"loss" : loss.item()
                                  },
                                  batch_size=batch_size)
+accuracy = match/triplets
