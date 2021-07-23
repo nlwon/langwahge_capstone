@@ -1,63 +1,59 @@
-from noggin import create_plot
-plotter, fig, ax = create_plot(metrics=["loss"], max_fraction_spent_plotting=.75)
-
-batch_size = 32
+from langwahge.model import Model, loss_accuracy
+from mynn.optimizers.sgd import SGD
+import numpy as np
+import coco_data
+import random
+# from noggin import create_plot
+# plotter, fig, ax = create_plot(metrics=["loss"], max_fraction_spent_plotting=.75)
 
 data = coco_data()
-coco_data, glove, resnet18_features, imgid_to_capid, capid_to_imgid, capid_to_capstr, counters = data.get_self()
+_, glove, resnet18_features, imgid_to_capid, capid_to_imgid, capid_to_capstr, _ = data.get_self()
+
+triplets = []
+# (caption_id, img_id, confuser_id)
+for key, value in capid_to_imgid:
+    caption_id = key
+    img_id = value
+    conf_id = random.choice(list(imgid_to_capid.keys()))
+    triplets.append((caption_id, img_id, conf_id))
+
 #split the data
-split_at = 0.75
-keyslist = list(resnet18_features.keys())
-split = int(len(keyslist)*split_at)
-training_keys = keyslist[:split]      #if this doesn't work for some reason could just hardcode
+split_at = 0.8
+split = int(len(triplets) * split_at)
+train_triplets = triplets[:split] 
+test_triplets = triplets[split:]
 
-training_vectors = [resnet18_features[i] for i in training_keys]
+model = Model(512, 200)
+optim = SGD(model.parameters, learning_rate = 1e-3, momentum =0.9)
 
-training_captions_id = [imgid_to_capid[i] for i in training_keys]
-
-training_captions = [capid_to_capstr[i] for i in training_captions_id]
-
-# test_vectors = resnet18_features[split:82600]
-# test_captions = 
-
-testing_keys = keyslist[split:82600]
-
-testing_vectors = [resnet18_features[i] for i in testing_keys]
-
-testing_captions_id = [imgid_to_capid[i] for i in testing_keys]
-
-testing_captions = [capid_to_capstr[i] for i in testing_captions_id]
-
-match = 0
-triplets = 0
-for epoch in range(10000):
-    indexes = np.arange((len(training_vectors)))
+batch_size = 32
+num_epochs = 10000
+for epoch in range(num_epochs):
+    indexes = np.arange((len(train_triplets)))
     np.random.shuffle(indexes)
-    for batch_count in range(0,len(training_vectors)//batch_size):
+    for batch_count in range(0,len(train_triplets)//batch_size):
         batch_indexes = indexes[batch_count*batch_size: batch_count*(batch_size+1)]
-        batch = training_vectors[batch_indexes]  
-#         print(batch)
-        w_caption = training_captions[i]  #should correspond to the vectors
-        prediction = model(batch)
+        img_batch = data.vectorize_image(train_triplets[batch_indexes][1])
+        img_preds = model(img_batch)
+        conf_batch = data.vectorize_image(train_triplets[batch_indexes][2])
+        conf_preds = model(conf_batch)
+#       print(batch)
+        w_captions = data.embed_text(capid_to_capstr[train_triplets[batch_indexes][0]])  #should correspond to the vectors 
+        #confuser = model(resnet18_features[random.choice(list(resnet18_features.keys())[:82600])])  
+        w_captions = data.embed_text(np.array([capid_to_capstr[i] for i in train_triplets[batch_indexes][0]]))
         
-        confuser = model(resnet18_features[random.choice(list(resnet18_features.keys())[:82600])])  
-        
-        sim_match = w_caption@prediction
-        sim_confuse = w_caption@confuser
-        
-        if sim_match>sim_confuse:  #accuracy?
-            match+=1
-        triplets+=1
-        
-        loss = loss_accuracy(sim_match, sim_confuse, 0.25)
+        list_phrases = [capid_to_capstr[i] for i in train_triplets[batch_indexes][0]]
+
+        w_captions = np.array([data.embed_text(i) for i in list_phrases])
+
+        sim_match = w_captions@img_preds
+        sim_confuse = w_captions@conf_preds
+        loss, acc = loss_accuracy(sim_match, sim_confuse, 0.25, len(train_triplets))
         
         loss.backward()
         
         optim.step()
         
-        #acc =  np.mean(np.argmax(prediction, axis=1) == batch)
-        
-        plotter.set_train_batch({"loss" : loss.item()
-                                 },
-                                 batch_size=batch_size)
-accuracy = match/triplets
+        # plotter.set_train_batch({"loss" : loss.item()
+        #                          },
+        #                          batch_size=batch_size)
