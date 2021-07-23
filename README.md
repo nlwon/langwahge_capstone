@@ -36,7 +36,7 @@ You can read more about the basics of creating a Python package [here](https://w
 
 # Planning
 
-Create a class that organizes all of the COCO data. It might store the following
+(X) COCO_DATA.PY: Create a class that organizes all of the COCO data. It might store the following
 
     (X) init(), initialize coco_data, glove, and resnet18_features
         *load in coco data from captions_train2014.json (["images"] id/url/shape & /["annotations"] id/image_id/string)
@@ -79,54 +79,71 @@ Create a class that organizes all of the COCO data. It might store the following
     (X) get_data(), returns tuple of data files
         *return coco_data, glove, resnet18_features, imgid_to_capid, capid_to_imgid, capid_to_capstr, counters
 
-Model: in a Jupyter Notebook:
+(X) MODEL.PY: The model class 
 
-    (X)Create a MyNN model for embedding image descriptors: d⃗ img→w^img
-        init()
+    (X) Create a MyNN model for embedding image descriptors: d⃗ img→w^img
+        (X) init() [TESTED]
             dense layer no bias, forward pass requires no activation func
 
-        call()
+        (X) call()
             Extract sets of (caption-ID, image-ID, confusor-image-ID) triples (training and validation sets) [Bhargav]
         
-        parameters()
+        (X) parameters() [TESTED]
             return trainable params
 
     (X) loss_accuracy(sim_match, sim_confuse, threshold, triplets), returns loss and accuracy
         loss = max(0, threshold - (sim_match - sim_confuse))
         accuracy = #sim_match>sim_confuse / number of triplets
 
-    Training the model:
-        (X) create_sets(), returns 
-            *separate out image IDs into distinct sets for training and validation
+TRAINING_V2: Training the model in a jupyter notebook
+    (X) create_sets(), returns 
+        *separate out image IDs into distinct sets for training and validation
 
-        (X) get the caption embedding (from database)
-            use embed_text(caption_embedding) for labels of images
+    (X) get the caption embedding (from database)
         
-        (X) embed the “true” image (through model)
+        *use embed_text(caption_embedding) for labels of images
+    
+    (X) embed the “true” image (through model)
 
-        (X) embed the “confusor” image (through model)
-                        
-        (X) compute similarities (caption and good image, caption and bad image)
-            sim_match = w_caption*w_img
-            sim_confuse = w_caption*w_img_confuse
-            delta threshold
+    (X) embed the “confusor” image (through model)
+                    
+    (X) compute similarities (caption and good image, caption and bad image)
+        *sim_match = w_caption*w_img
+        *sim_confuse = w_caption*w_img_confuse
+        *delta threshold
 
-        (X) compute margin-ranking loss and accuracy
-            loss_accuracy()
+    (X) compute margin-ranking loss and accuracy
+        *loss_accuracy()
 
-        (X) take optimization step
-        (USE SGD OPTIMIZER)
+    (X) take optimization step
+        *uses sgd optimizer
 
-    Write functionality for saving / loading trained model weights
+    (X) save_weights(model) [TESTED]
+        *function to save the model weights into a file
 
+    (X) load_weights(weights) [TESTED]
+        *given a filename, load in model weights from that file
 
-Create image database by mapping image feature vectors to semantic embeddings with the trained model
+DATABASE.PY: Create image database by mapping image feature vectors to semantic embeddings with the trained model
 
-    populate_image_database(image_dvector) [isita + celine]
-        embeddings from passing into model, normalize
-        populate database with {image_dvector: embeddings}
+    (X) initialize_database()
+        *initialize database as a python dictionary
 
-Write function to query database with a caption-embedding and return the top-k images [isita + celine]
+    (X) load_dictionary(filepath)
+        *load from pkl file given filepath
+
+    (X) save_dictionary(filepath)
+        *save a pkl file to given filepath
+
+    populate_image_database() 
+        *embeddings from passing into model, normalize
+        *populate database with {image_dvector: embeddings}
+
+    query_database()
+        *query database with user's input
+        *dot product, find the closest match
+
+MAIN_FUNCTIONS.PY: Write function to query database with a caption-embedding and return the top-k images
 
     user input query text/caption
     embed_text
@@ -134,6 +151,6 @@ Write function to query database with a caption-embedding and return the top-k i
     dotproduct
     top-k similarities, get top match
 
-Write function to display set of images given COCO image ids [isita + celine]
+MAIN_FUNCTIONS.PY: Write function to display set of images given COCO image ids
 
     (display)

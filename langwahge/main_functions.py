@@ -1,2 +1,1 @@
-
-def initialize_database():
+# def initialize_database():

@@ -3,11 +3,46 @@ from mynn.optimizers.sgd import SGD
 import numpy as np
 import coco_data
 import random
+
+def save_weights(model):
+    """ 
+    Saves the weights from the trained model
+
+    Parameters
+    ----------
+    model : obj
+        the trained model that is an instance of the Model class
+
+    Returns
+    -------
+    str
+        the file name in which the weights are stored
+    """
+    np.save("weights.npy", model.parameters)
+    return "weights.npy"
+
+def load_weights(weights):
+    """ 
+    Loads the weights from the trained model
+
+    Parameters
+    ----------
+    weights : str
+        the file name in which the weights are stored
+
+    Returns
+    -------
+    np.array
+        loading in the saved weight matrix from the given file name
+    """
+    weight = np.load(weights)
+    return weight
+
 # from noggin import create_plot
 # plotter, fig, ax = create_plot(metrics=["loss"], max_fraction_spent_plotting=.75)
 
 data = coco_data()
-_, glove, resnet18_features, imgid_to_capid, capid_to_imgid, capid_to_capstr, _ = data.get_self()
+_, glove, resnet18_features, imgid_to_capid, capid_to_imgid, capid_to_capstr, _ = data.get_data()
 
 triplets = []
 # (caption_id, img_id, confuser_id)
@@ -37,7 +72,7 @@ for epoch in range(num_epochs):
         img_preds = model(img_batch)
         conf_batch = data.vectorize_image(train_triplets[batch_indexes][2])
         conf_preds = model(conf_batch)
-#       print(batch)
+        #print(batch)
         w_captions = data.embed_text(capid_to_capstr[train_triplets[batch_indexes][0]])  #should correspond to the vectors 
         #confuser = model(resnet18_features[random.choice(list(resnet18_features.keys())[:82600])])  
         w_captions = data.embed_text(np.array([capid_to_capstr[i] for i in train_triplets[batch_indexes][0]]))
@@ -57,3 +92,5 @@ for epoch in range(num_epochs):
         # plotter.set_train_batch({"loss" : loss.item()
         #                          },
         #                          batch_size=batch_size)
+
+filename = save_weights(model)

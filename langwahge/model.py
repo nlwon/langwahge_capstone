@@ -52,7 +52,6 @@ class Model:
         -------
         Tuple[Tensor, ...]
             A tuple containing all of the learnable parameters for our model"""
-        # STUDENT CODE HERE
         return self.encoder.parameters
 
 def loss_accuracy(sim_match, sim_confuse, threshold, triplets = 0):
@@ -69,7 +68,7 @@ def loss_accuracy(sim_match, sim_confuse, threshold, triplets = 0):
         Tuple[Tensor, ...]
             A tuple containing all of the learnable parameters for our model
     """
-    loss = mygrad.nnet.losses.margin_ranking_loss(sim_match, sim_confuse, threshold)
+    loss = mg.nnet.losses.margin_ranking_loss(sim_match, sim_confuse, threshold)
     list_to_sum = [1 if sim_match>sim_confuse else 0 for i in triplets]
     acc = sum(list_to_sum)/len(triplets)
     return loss, acc

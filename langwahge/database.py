@@ -2,16 +2,16 @@
 import pickle
 import mygrad as mg
 import numpy as np
-from facenet_models import FacenetModel # assume facenet_models is already installed in conda environment
-from camera import take_picture
+# from facenet_models import FacenetModel # assume facenet_models is already installed in conda environment
+# from camera import take_picture
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
-import skimage.io as io
+# import skimage.io as io
 import pathlib 
 import numpy as np
-from coco_data import *
+from .coco_data import *
 
-def initialize_database():
+def initialize_database(): 
     """
     Initalizes a dictionary database 
 
@@ -38,7 +38,8 @@ def initialize_database():
         print("Error: Invalid Option") 
     return database
 
-def file_image(path_to_image):
+
+"""def file_image(path_to_image):
     # shape-(Height, Width, Color)
     image = io.imread(str(path_to_image))
     print(image)
@@ -47,8 +48,8 @@ def file_image(path_to_image):
         # Must make image RGB.
         image = image[..., :-1]  # png -> RGB
 
-def get_image():
-    """
+def get_image(): 
+    \"""
     returns image data
     ----------
     Parameters:
@@ -61,7 +62,7 @@ def get_image():
     Notes
     -----
     
-    """
+\"""
     image_type = int(input("Enter 0 to load an image file, Enter 1 to take a picture with your webcam: "))
     # Image File
     if image_type == 0:
@@ -75,9 +76,10 @@ def get_image():
     # Invalid Option
     else:
         print("Error: Invalid Option")  
-    return image
+    return image"""
+
     
-def load_dictionary(file_path):
+def load_dictionary(file_path): 
     """
     loads a dictionary from a Pickle file
     Parameters
@@ -97,7 +99,8 @@ def load_dictionary(file_path):
     with open(file_path, mode = "rb") as opened_file:
         return pickle.load(opened_file)
 
-def save_dictionary(dict, file_path):
+
+def save_dictionary(dict, file_path): 
     """
     saves a dictionary to a Pickle file
     Parameters
@@ -117,7 +120,8 @@ def save_dictionary(dict, file_path):
     with open(file_path, mode = "wb") as opened_file:
         pickle.dump(dict, opened_file)
 
-def populate_image_database(image, database):
+
+def populate_image_database(image, database): 
     """
     embeddings from passing into model, normalize
         populate database with {image_dvector: embeddings}
@@ -140,5 +144,18 @@ def populate_image_database(image, database):
     image_dvector = vectorize_image(image_id)
     normal_text_embedding = embed_text(caption_string)
     database[image_dvector] = normal_text_embedding
-    
- def query_database
+
+
+
+def query_database(text): 
+     """
+
+     Parameters
+     ---------
+
+     Returns 
+     -----
+     """
+     
+
+
