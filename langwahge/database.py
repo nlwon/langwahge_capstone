@@ -37,47 +37,6 @@ def initialize_database():
     else:
         print("Error: Invalid Option") 
     return database
-
-
-"""def file_image(path_to_image):
-    # shape-(Height, Width, Color)
-    image = io.imread(str(path_to_image))
-    print(image)
-    if image.shape[-1] == 4:
-        # Image is RGBA, where A is alpha -> transparency
-        # Must make image RGB.
-        image = image[..., :-1]  # png -> RGB
-
-def get_image(): 
-    \"""
-    returns image data
-    ----------
-    Parameters:
-    None
-    
-    Returns
-    -------
-    3D numpy array
-
-    Notes
-    -----
-    
-\"""
-    image_type = int(input("Enter 0 to load an image file, Enter 1 to take a picture with your webcam: "))
-    # Image File
-    if image_type == 0:
-        filename = input("What's the name of the desired image file? (Include file path and extension): ")  #there's an issue with loading files in
-        
-        print(filename)
-        image = file_image(filename) 
-    # Webcamera Sample
-    elif image_type == 1:
-        image = take_picture()
-    # Invalid Option
-    else:
-        print("Error: Invalid Option")  
-    return image"""
-
     
 def load_dictionary(file_path): 
     """
@@ -120,7 +79,6 @@ def save_dictionary(dict, file_path):
     with open(file_path, mode = "wb") as opened_file:
         pickle.dump(dict, opened_file)
 
-
 def populate_image_database(image, database): 
     """
     embeddings from passing into model, normalize
@@ -144,8 +102,6 @@ def populate_image_database(image, database):
     image_dvector = vectorize_image(image_id)
     normal_text_embedding = embed_text(caption_string)
     database[image_dvector] = normal_text_embedding
-
-
 
 def query_database(text): 
      """

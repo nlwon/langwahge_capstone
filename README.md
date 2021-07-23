@@ -1,4 +1,4 @@
-                # langwahge
+# langwahge
 
 # Simple Python Project Template
 
@@ -95,7 +95,7 @@ You can read more about the basics of creating a Python package [here](https://w
         loss = max(0, threshold - (sim_match - sim_confuse))
         accuracy = #sim_match>sim_confuse / number of triplets
 
-TRAINING_V2: Training the model in a jupyter notebook
+TRAINING.PY: Training the model in a jupyter notebook
     (X) Make triplets [TESTED]
     (X) create_sets(), returns 
         *separate out image IDs into distinct sets for training and validation
@@ -136,22 +136,15 @@ DATABASE.PY: Create image database by mapping image feature vectors to semantic 
     (X) save_dictionary(filepath)
         *save a pkl file to given filepath
 
-    populate_image_database() 
+    [NEED TO BE FIXED] populate_image_database() 
         *embeddings from passing into model, normalize
         *populate database with {image_dvector: embeddings}
 
-    query_database()
+    [NEEDS TO BE MADE] query_database()
         *query database with user's input
         *dot product, find the closest match
 
 MAIN_FUNCTIONS.PY: Write function to query database with a caption-embedding and return the top-k images
 
-    user input query text/caption
-    embed_text
-    (database already has word embeddings)
-    dotproduct
-    top-k similarities, get top match
-
-MAIN_FUNCTIONS.PY: Write function to display set of images given COCO image ids
-
-    (display)
+    query
+    function to display set of images given COCO image ids

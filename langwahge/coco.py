@@ -11,35 +11,9 @@ import mygrad as mg
 class Coco:
     punc_regex = re.compile('[{}]'.format(re.escape(string.punctuation)))
     
-    def get_idf(self):
-        """ 
-        Given the vocabulary, and the word-counts for each document, computes
-        the inverse document frequency (IDF) for each term in the vocabulary.
-        
-        Parameters
-        ----------
-        None
-        
-        Returns
-        -------
-        nt: dict{string, float}
-            A dictionary storing the IDF for each term in vocab
-        """
-        nt = {}
-        N = len(self.counters)
-        for t in self.vocab:
-            total = 0
-            for counter in self.counters:
-                if t in counter:
-                    total += 1
-
-            nt[t] = np.log10(N / total)
-
-        return nt
-    
     def strip_punc(self, corpus):
         """ 
-        Removes all punctuation from a string.
+        removes all punctuation from a string
 
         Parameters
         ----------
@@ -47,17 +21,14 @@ class Coco:
 
         Returns
         -------
-        str
-            the corpus with all punctuation removed
+        str : the corpus with all punctuation removed
         """
         # substitute all punctuation marks with ""
-        
         return self.punc_regex.sub('', str(corpus))
     
     def to_counter(self, doc):
         """ 
-        Produce word-count of document, removing all punctuation
-        and making all the characters lower-cased.
+        produces word counter of document, while removing punctuation and translating to lowercase
         
         Parameters
         ----------
@@ -65,32 +36,29 @@ class Coco:
         
         Returns
         -------
-        collections.Counter
-            lower-cased word -> count
+        collections.Counter : lower-cased word -> count
         """
         return Counter(self.strip_punc(doc).lower().split())
 
     def to_vocab(self, counters, k=None):
         """ 
-        Convert a collection of counters to a sorted list of the top-k most common words 
+        convert a collection of counters to a sorted list of the top-k most common words 
         
         Parameters
         ----------
         counters : Sequence[collections.Counter]
             A list of counters; each one is a word tally for a document
         
-        k : Optional[int]
+        k : optional[int]
             If specified, only the top-k words are returned
             
         Returns
         -------
-        List[str]
-            A sorted list of the unique strings.
+        List[str] : A sorted list of the unique strings.
         """
         vocab = Counter()
         for counter in counters:
             vocab.update(counter)
-            
         return sorted(i for i,j in vocab.most_common(k))
 
     def __init__(self): 
@@ -104,7 +72,7 @@ class Coco:
         caption-ID -> image-ID
         caption-ID -> caption (e.g. 24 -> "two dogs on the grass")
         
-        initialize vocab list and counters list as attributes
+        calculate idfs, and map vocabwords : idfs for use in embedding function
        
         Parameters
         ----------
@@ -128,8 +96,8 @@ class Coco:
         self.imgid_to_capid = {}
         self.capid_to_imgid = {}
         self.capid_to_capstr = {}
-        self.counters = []
-
+        self.vocab_counts = {} # all words and counts among every caption
+        
         for caption in self.coco_data["annotations"]:
             # input caption_id to imgid_to_capid if the img_id key exists
             if self.imgid_to_capid.__contains__(caption["image_id"]):
@@ -143,9 +111,20 @@ class Coco:
             # input caption to capid_to_capstr
             self.capid_to_capstr[caption["id"]] = caption["caption"]
     
-            self.counters.append(self.to_counter(caption["caption"]))
-
-        self.vocab = self.to_vocab(self.counters)
+            # compile all the words and their counts among every caption
+            cap_counter = self.to_counter(caption)
+            for word in cap_counter.keys():
+                if word not in self.vocab_counts:
+                    self.vocab_counts[word] = 1
+                elif word in self.vocab_counts:  
+                    self.vocab_counts[word] += 1
+        
+        # log10 of (number of all captions) / (count of each word among all captions)
+        N = len(self.coco_data["annotations"])
+        idfs = np.log10(np.array([N / vocab_count for vocab_count in self.vocab_counts.values()]))
+        # maps WORD-STRING to WORD-IDF
+        self.idfs_dict = dict(zip(self.vocab_counts.keys(), list(idfs)))
+        self.punc_regex = re.compile('[{}]'.format(re.escape(string.punctuation)))
         
     def random_pair(self):
         """
@@ -187,7 +166,7 @@ class Coco:
             return np.zeros((512,))
         else:
             return self.resnet18_features[image_id]
-
+    
     def embed_text(self, text_string):
         """
         returns normal_text_embedding
@@ -202,32 +181,32 @@ class Coco:
         String
             normal text embedding
         """
-        # returns normal_text_embedding
-        # embed any caption / query text using GloVe-200 embeddings weighted by IDFs of words across captions (pass in either a user's query or existing caption)     
-        # lowercase, remove punc, tokenize
-        text_string = strip_punc(text_string).lower().split()
+        # filter text_string with lowercase, remove punc, tokenize
+        text_string = self.strip_punc(text_string).lower().split()
 
         text_embedding = []
-        idf = self.get_idf()
         for word in text_string:
-        # check if each word in given string is in glove[], if not then embedding vector 0
-        # else get glove vector (200,) for it
+                              
+            # if word in string is not in glove[], embedding vector is 0
             glove_vector = 0
+            word_idf = 0
+            # if word in string is in glove[], get glove embedding vector                            
             if word in self.glove:
                 glove_vector = self.glove[word]
-            
-            idf_word = idf[word]
-            text_embedding.append(glove_vector * idf_word)
+                word_idf = self.idfs_dict[word]
+                            
+            # update text_embedding from this word's embedding vector and idf
+            text_embedding.append(glove_vector * word_idf) 
 
         # add all together for the final phrase embed vector, then normalize
-        normal_text_embedding = mg.sqrt(mg.einsum("ij, ij -> i", text_embedding, text_embedding)).reshape(-1, 1)
+        normalized_text_embedding = mg.sqrt(mg.einsum("ij, ij -> i", text_embedding, text_embedding)).reshape(-1, 1)
 
         # return normal_text_embedding
-        return normal_text_embedding
-
+        return normalized_text_embedding 
+    
     def get_data(self):
         """
-        returns coco_data, glove , resnet18_features, imgid_to_capid, capid_to_imgid, capid_to_capstr, counters
+        returns attributes
 
         Parameters
         ---------
@@ -235,7 +214,8 @@ class Coco:
 
         Returns 
         -------
-        Tuple(dict, dict, dict)
-            contains coco data, glove data, and resnet data
+        Tuple(dict (* 8))
+            contains coco_data, glove , resnet18_features, imgid_to_capid, 
+            capid_to_imgid, capid_to_capstr, vocab_counts, idfs_dict
         """
-        return (self.coco_data, self.glove, self.resnet18_features, self.imgid_to_capid, self.capid_to_imgid, self.capid_to_capstr, self.counters)
+        return (self.coco_data, self.glove, self.resnet18_features, self.imgid_to_capid, self.capid_to_imgid, self.capid_to_capstr, self.vocab_counts, self.idfs_dict)
