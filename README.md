@@ -36,33 +36,29 @@ You can read more about the basics of creating a Python package [here](https://w
 
 # Planning
 
-(X) COCO.PY: Create a class that organizes all of the COCO data. It might store the following
+[WORKING] (X) COCO.PY: Create a class that organizes all of the COCO data. It might store the following
 
-    (X) init(), initialize coco_data, glove, and resnet18_features
+    [WORKING] (X) init(), initialize coco_data, glove, and resnet18_features
         *load in coco data from captions_train2014.json (["images"] id/url/shape & /["annotations"] id/image_id/string)
         *load in resnet data from resnet18_features.pkl (image dvectors)
         *load in glove data from glove.6B.200d.txt.w2v (word embeddings)
         initialize dictionaries imgid_to_capid, capid_to_imgid, capid_to_capstr
         initialize lists counters and vocab
         
-        (X) to_vocab()
+        [WORKING] (X) to_vocab()
             returns list of vocab given a list of counters
         
-        (X) to_counter()
+        [WORKING] (X) to_counter()
             returns counter of a given string
     
-    (X) random_pair(), returns a random image_id and respective caption_string
+    [WORKING] (X) random_pair(), returns a random image_id and respective caption_string
         *get random image id and respective caption string
 
-    (X) vectorize_image(image_id), returns image_dvector
+    [WORKING] (X) vectorize_image(image_id), returns image_dvector
         *image id --> image dvector
         if image is not in resnet features, return array of 0s
 
-    (X) strip_punc()
-        strips away punctuation of given text
-        used in get_idf()
-
-    (X) embed_text(text_string), returns normal_text_embedding
+    [WORKING] (X) embed_text(text_string), returns normal_text_embedding
         *embed any caption / query text using GloVe-200 embeddings weighted by IDFs of words across captions (pass in either a user's query or existing caption)     
         *lowercase, remove punc, tokenize
         *check if each word in given string is in glove[], if not then embedding vector 0
@@ -72,32 +68,44 @@ You can read more about the basics of creating a Python package [here](https://w
         *add all together for the final phrase embed vector, then normalize
         *return normal_text_embedding
 
-    (X) get_idf(), returns idf
+        [WORKING] (X) strip_punc()
+            used in embed_text to strip a string's punctuation
+
+    [WORKING] (X) get_idf(), returns idf
         *part of embed_text
         creates a dictionary {vocab_word : idf_value} using vocab list and counters list
 
-    (X) get_data(), returns tuple of data files
+    [WORKING] (X) get_data(), returns tuple of data files
         *return coco_data, glove, resnet18_features, imgid_to_capid, capid_to_imgid, capid_to_capstr, counters
 
-(X) MODEL.PY: The model class 
+[WORKING] (X) MODEL.PY: The model class 
 
-    (X) Create a MyNN model for embedding image descriptors: d⃗ img→w^img
-        (X) init() [TESTED]
+    [WORKING] (X) Create a MyNN model for embedding image descriptors: d⃗ img→w^img
+    
+        [WORKING] (X) init() 
             dense layer no bias, forward pass requires no activation func
 
-        (X) call()
+        [WORKING] (X) call()
             Extract sets of (caption-ID, image-ID, confusor-image-ID) triples (training and validation sets) [Bhargav]
         
-        (X) parameters() [TESTED]
+        [WORKING] (X) parameters() 
             return trainable params
 
-    (X) loss_accuracy(sim_match, sim_confuse, threshold, triplets), returns loss and accuracy
+    [WORKING] (X) loss_accuracy(sim_match, sim_confuse, threshold, triplets), returns loss and accuracy
         loss = max(0, threshold - (sim_match - sim_confuse))
         accuracy = #sim_match>sim_confuse / number of triplets
+       
+    [WORKING] (X) save_weights(model)
+        *function to save the model weights into a file
 
-TRAINING.PY: Training the model in a jupyter notebook
-    (X) Make triplets [TESTED]
-    (X) create_sets(), returns 
+    [WORKING] (X) load_weights(weights)
+        *given a filename, load in model weights from that file
+
+TRAINING.MD: Training the model in a jupyter notebook
+
+    (X) Make triplets 
+
+    (X) create_sets()
         *separate out image IDs into distinct sets for training and validation
 
     (X) get the caption embedding (from database)
@@ -119,13 +127,7 @@ TRAINING.PY: Training the model in a jupyter notebook
     (X) take optimization step
         *uses sgd optimizer
 
-    (X) save_weights(model) [TESTED]
-        *function to save the model weights into a file
-
-    (X) load_weights(weights) [TESTED]
-        *given a filename, load in model weights from that file
-
-DATABASE.PY: Create image database by mapping image feature vectors to semantic embeddings with the trained model
+(X) DATABASE.PY: Create image database by mapping image feature vectors to semantic embeddings with the trained model
 
     (X) initialize_database()
         *initialize database as a python dictionary
@@ -136,15 +138,18 @@ DATABASE.PY: Create image database by mapping image feature vectors to semantic 
     (X) save_dictionary(filepath)
         *save a pkl file to given filepath
 
-    [NEED TO BE FIXED] populate_image_database() 
+    (X) populate_image_database() 
         *embeddings from passing into model, normalize
         *populate database with {image_dvector: embeddings}
 
-    [NEEDS TO BE MADE] query_database()
+    (X) query_database()
         *query database with user's input
         *dot product, find the closest match
 
-MAIN_FUNCTIONS.PY: Write function to query database with a caption-embedding and return the top-k images
+MAIN PROGRAM: Write function to query database with a caption-embedding and return the top-k images
 
-    query
+    >>> INCOMPLETE
+    query function
+
+    >>> INCOMPLETE
     function to display set of images given COCO image ids

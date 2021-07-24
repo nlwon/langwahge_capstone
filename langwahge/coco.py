@@ -21,9 +21,8 @@ class Coco:
 
         Returns
         -------
-        str : the corpus with all punctuation removed
+        the corpus with all punctuation removed (str)
         """
-        # substitute all punctuation marks with ""
         return self.punc_regex.sub('', str(corpus))
     
     def to_counter(self, doc):
@@ -36,7 +35,7 @@ class Coco:
         
         Returns
         -------
-        collections.Counter : lower-cased word -> count
+        lowercase-word : count (counter)
         """
         return Counter(self.strip_punc(doc).lower().split())
 
@@ -46,15 +45,15 @@ class Coco:
         
         Parameters
         ----------
-        counters : Sequence[collections.Counter]
-            A list of counters; each one is a word tally for a document
+        counters : sequence[collections.Counter]
+            list of counters; each one is a word tally for a document
         
         k : optional[int]
-            If specified, only the top-k words are returned
+            if specified, only the top-k words are returned
             
         Returns
         -------
-        List[str] : A sorted list of the unique strings.
+        a sorted list of the unique strings (list(str))
         """
         vocab = Counter()
         for counter in counters:
@@ -83,14 +82,14 @@ class Coco:
         None
         """
         # load COCO metadata
-        with Path(r"data/captions_train2014.json").open() as f:
+        with Path(r"langwahge\data\captions_train2014.json").open() as f:  
             self.coco_data = json.load(f)
         
         # load GloVe-200 embeddings
-        self.glove = KeyedVectors.load_word2vec_format(r"data/glove.6B.200d.txt.w2v", binary=False)
+        self.glove = KeyedVectors.load_word2vec_format(r"langwahge\data\glove.6B.200d.txt.w2v", binary=False)
 
         # load image descriptor vectors
-        with Path(r"data/resnet18_features.pkl").open('rb') as f:
+        with Path(r"langwahge\data\resnet18_features.pkl").open('rb') as f:
             self.resnet18_features = pickle.load(f)
         
         self.imgid_to_capid = {}
@@ -124,11 +123,10 @@ class Coco:
         idfs = np.log10(np.array([N / vocab_count for vocab_count in self.vocab_counts.values()]))
         # maps WORD-STRING to WORD-IDF
         self.idfs_dict = dict(zip(self.vocab_counts.keys(), list(idfs)))
-        self.punc_regex = re.compile('[{}]'.format(re.escape(string.punctuation)))
         
     def random_pair(self):
         """
-        returns a random caption_string and respective image id
+        returns a random caption id and respective image id
 
         Parameters
         ---------
@@ -136,17 +134,15 @@ class Coco:
         
         Returns 
         -------
-        Tuple(int, string)
-            this contains the random caption_string and respective image id
-
+        random caption id and respective image id (tuple(int, int))
         """    
         # random respective caption string
         captions = self.coco_data["annotations"]
-        i = random.randint(0, len(captions)) 
+        i = random.randint(0, len(captions)-1) 
         
         caption_info = captions[i]
         
-        return caption_info["image_id"], caption_info["caption"]
+        return caption_info["image_id"], caption_info["id"]
         
     def vectorize_image(self, image_id):
         """
@@ -159,11 +155,10 @@ class Coco:
         
         Returns 
         -------
-        image_dvector: np.array shape-(512,)
-            a descriptor vector of the image as provided by RESNET
+        a descriptor vector of the image as provided by RESNET (np.array shape-(512,))
         """
-        if image_id not in self.resnet18_features.keys():
-            return np.zeros((1, 512))
+        if image_id not in self.resnet18_features: #hashtable generally doesnt need the .keys() when checking if key exists 
+            return np.zeros((512,))
         else:
             return self.resnet18_features[image_id]
     
@@ -173,40 +168,45 @@ class Coco:
 
         Parameters
         ---------
-        text_string: String
+        text_string: string
             a caption/query text 
         
         Returns 
         -------
-        String
-            normal text embedding
+        normal text embedding (string)
         """
         # filter text_string with lowercase, remove punc, tokenize
         text_string = self.strip_punc(text_string).lower().split()
 
-        text_embedding = []
+        text_embedding = np.zeros((200,))
         for word in text_string:
                               
             # if word in string is not in glove[], embedding vector is 0
-            glove_vector = 0
-            word_idf = 0
+            glove_vector = np.zeros((200,))
+
+            # if word in string is not in idf vocabulary, embedding vector is 0
+            word_idf = np.zeros((200,))
+
             # if word in string is in glove[], get glove embedding vector                            
             if word in self.glove:
                 glove_vector = self.glove[word]
+      
+            # if word in string is in idf vocabulary, get respective idf
+            if word in self.idfs_dict.keys():
                 word_idf = self.idfs_dict[word]
-                            
+
             # update text_embedding from this word's embedding vector and idf
-            text_embedding.append(glove_vector * word_idf) 
+            np.append(text_embedding, (glove_vector * word_idf))
 
         # add all together for the final phrase embed vector, then normalize
-        normalized_text_embedding = mg.sqrt(mg.einsum("ij, ij -> i", text_embedding, text_embedding)).reshape(-1, 1)
+        normalized_text_embedding = text_embedding/(np.sqrt((text_embedding**2).sum(keepdims = True)))
 
         # return normal_text_embedding
         return normalized_text_embedding 
     
     def get_data(self):
         """
-        returns attributes
+        returns all attributes
 
         Parameters
         ---------
@@ -214,8 +214,35 @@ class Coco:
 
         Returns 
         -------
-        Tuple(dict (* 8))
+        Tuple(dict x 8)
             contains coco_data, glove , resnet18_features, imgid_to_capid, 
             capid_to_imgid, capid_to_capstr, vocab_counts, idfs_dict
         """
         return (self.coco_data, self.glove, self.resnet18_features, self.imgid_to_capid, self.capid_to_imgid, self.capid_to_capstr, self.vocab_counts, self.idfs_dict)
+
+    """
+    EMBED_TEXT ALTERNATE CODE, IGNORE OTHERWISE
+        text_string = self.strip_punc(text_string).lower().split()
+
+        text_embedding = np.zeros((200,))
+        for word in text_string:                 
+            # if word in string is not in glove[], embedding vector is 0
+            glove_vector = np.zeros((200,))
+            word_idf = np.zeros((200,))
+            # if word in string is in glove[], get glove embedding vector                            
+            if word in self.glove:
+                glove_vector = self.glove[word]
+                if word in self.idfs_dict:
+                    word_idf = self.idfs_dict[word]
+                 else:  
+                    self.vocab_counts[word] += 1     
+                    word_idf = np.log10(len(self.coco_data["annotations"]))
+            # update text_embedding from this word's embedding vector and idf
+                text_embedding+=(glove_vector * word_idf) 
+            
+        # add all together for the final phrase embed vector, then normalize
+        #normalized_text_embedding = mg.sqrt(mg.einsum("ij, ij -> i", text_embedding, text_embedding)).reshape(-1, 1)
+        normalized_text_embedding = text_embedding/(np.sqrt((text_embedding**2).sum(keepdims = True)))
+        # return normal_text_embedding
+        return normalized_text_embedding 
+    """

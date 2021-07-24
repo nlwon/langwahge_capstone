@@ -1,11 +1,12 @@
-import mygrad as mg
 from mynn.layers.dense import dense
 from mygrad.nnet.initializers import glorot_normal
-import random
+import mygrad as mg
+import numpy as np
 
 class Model:
     def __init__(self, input_dim, output_dim):
-        """ Initializes all of the encoder and decoder layers in our model, setting them
+        """ 
+        Initializes all of the encoder and decoder layers in our model, setting them
         as attributes of the model.
         
         Parameters
@@ -15,11 +16,16 @@ class Model:
             
         d : int
             The dimensionality of our word embeddings
+
+        Returns
+        -------
+        None
         """
         self.encoder = dense(input_dim, output_dim, weight_initializer = glorot_normal, bias = False)
     
     def __call__(self, x):
-        ''' Passes data as input to our model, performing a "forward-pass".
+        """
+        Passes data as input to our model, performing a "forward-pass".
         
         This allows us to conveniently initialize a model `m` and then send data through it
         to be classified by calling `m(x)`.
@@ -32,8 +38,8 @@ class Model:
         Returns
         -------
         mygrad.Tensor, shape=(M, context_words)
-            The result of passing the data through borth the encoder and decoder.
-        '''
+            The result of passing the data through both the encoder and decoder.
+        """
         normal_this = self.encoder(x)
         normal = mg.sqrt((normal_this**2).sum(keepdims = True))
         return normal 
@@ -51,77 +57,65 @@ class Model:
         Returns
         -------
         Tuple[Tensor, ...]
-            A tuple containing all of the learnable parameters for our model"""
+            A tuple containing all of the learnable parameters for our model
+        """
         return self.encoder.parameters
 
-def loss_accuracy(sim_match, sim_confuse, threshold, triplets = 0):
+def loss_accuracy(sim_match, sim_confuse, margin, triplet_count=0):
     """ 
-        A convenience function for getting all the parameters of our model.
-        This can be accessed as an attribute, via `model.parameters` 
-        
-        Parameters
-        ----------
-        None
+    returns loss and accuracy
+    
+    Parameters
+    ----------
+    sim_match, sim_confuse, threshold, triplets = 0
 
-        Returns
-        -------
-        Tuple[Tensor, ...]
-            A tuple containing all of the learnable parameters for our model
+    Returns
+    -------
+    Tuple[Tensor, ...]
+        tuple of loss and accuracy 
     """
-    loss = mg.nnet.losses.margin_ranking_loss(sim_match, sim_confuse, threshold)
-    list_to_sum = [1 if sim_match>sim_confuse else 0 for i in triplets]
-    acc = sum(list_to_sum)/len(triplets)
+    loss = mg.nnet.losses.margin_ranking_loss(sim_match, sim_confuse, 1, margin) 
+    
+    flat_sim_match = sim_match.flatten()                                 
+    flat_sim_confuse = sim_confuse.flatten()
+    
+    true_count = sum([flat_sim_match[i] > flat_sim_confuse[i] for i in range(len(flat_sim_match))])            
+    #list_to_sum = [1 if (match>confuse) else 0 for match,confuse in zip(list(flat_sim_match),list(flat_sim_confuse))]   
+    
+    acc = true_count / triplet_count
+    #acc = sum(list_to_sum)/triplet_count
     return loss, acc
 
-# model = Model(input_dim = 512, output_dim = 200)
-# optim = SGD(model.parameters, learning_rate = 1e-3, momentum = 0.9)
+def save_weights(model):
+    """ 
+    Saves the weights from the trained model
 
-# from noggin import create_plot
-# plotter, fig, ax = create_plot(metrics=["loss"], max_fraction_spent_plotting=.75)
+    Parameters
+    ----------
+    model : obj
+        the trained model that is an instance of the Model class
 
-# batch_size = 32
+    Returns
+    -------
+    str
+        the file name in which the weights are stored
+    """
+    np.save("weights.npy", model.parameters)
+    return "weights.npy"
 
-# data = coco_data()
-# coco_data, glove, resnet18_features, imgid_to_capid, capid_to_imgid, capid_to_capstr, counters = data.get_self()
-# #split the data
-# split_at = 0.75
-# split = int(len(resnet18_features)*split_at)
-# training_vectors = resnet18_features[:split]      #if this doesn't work for some reason could just hardcode
-# training_captions = 
+def load_weights(weights):
+    """ 
+    Loads the weights from the trained model
 
-# test_vectors = resnet18_features[split:82600]
-# test_captions = 
+    Parameters
+    ----------
+    weights : str
+        the file name in which the weights are stored
 
-# match = 0
-# triplets = 0
-# for epoch in range(10000):
-#     indexes = np.arange((len(training_vectors)))
-#     np.random.shuffle(indexes)
-#     for batch_count in range(0,len(training_vectors)//batch_size):
-#         batch_indexes = indexes[batch_count*batch_size: batch_count*(batch_size+1)]
-#         batch = training_vectors[batch_indexes]  
-# #         print(batch)
-#         w_caption = training_captions[i]
-#         prediction = model(batch)
-        
-#         confuser = model(resnet18_features[random.choice(list(resnet18_features)[:82600])])  
-        
-#         sim_match = w_caption@prediction
-#         sim_confuse = w_caption@confuser
-        
-#         if sim_match>sim_confuse:  #accuracy?
-#             match+=1
-#         triplets+=1
-        
-#         loss = loss_accuracy(sim_match, sim_confuse, 0.25)
-        
-#         loss.backward()
-        
-#         optim.step()
-        
-#         #acc =  np.mean(np.argmax(prediction, axis=1) == batch)
-        
-#         plotter.set_train_batch({"loss" : loss.item()
-#                                  },
-#                                  batch_size=batch_size)
-# accuracy = match/triplets
+    Returns
+    -------
+    np.array
+        loading in the saved weight matrix from the given file name
+    """
+    weight = np.load(weights)
+    return weight
