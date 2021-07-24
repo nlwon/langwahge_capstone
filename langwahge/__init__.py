@@ -1,4 +1,3 @@
-from .coco_data import *
-from .database import *
-from .main_functions import *
+from .coco import *
 from .model import *
+from .database import *
