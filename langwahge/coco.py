@@ -6,7 +6,6 @@ import re, string
 import pickle
 import numpy as np
 import random
-import mygrad as mg
 
 class Coco:
     punc_regex = re.compile('[{}]'.format(re.escape(string.punctuation)))
@@ -173,20 +172,24 @@ class Coco:
         
         Returns 
         -------
-        normal text embedding (string)
+        normal text embedding 
         """
         # filter text_string with lowercase, remove punc, tokenize
         text_string = self.strip_punc(text_string).lower().split()
 
-        text_embedding = np.zeros((200,))
+        # text_embedding = np.zeros((200,))
+        text_embedding = [0] * 200
+        counter = 0
         for word in text_string:
                               
             # if word in string is not in glove[], embedding vector is 0
-            glove_vector = np.zeros((200,))
+            # glove_vector = np.zeros((200,))
+            glove_vector = [0] * 200
 
             # if word in string is not in idf vocabulary, embedding vector is 0
-            word_idf = np.zeros((200,))
-
+            # word_idf = np.zeros((200,))
+            word_idf = [0] * 200
+            
             # if word in string is in glove[], get glove embedding vector                            
             if word in self.glove:
                 glove_vector = self.glove[word]
@@ -195,14 +198,17 @@ class Coco:
             if word in self.idfs_dict.keys():
                 word_idf = self.idfs_dict[word]
 
-            # update text_embedding from this word's embedding vector and idf
-            np.append(text_embedding, (glove_vector * word_idf))
+            # update text_embedding from this word's embedding vector and id
+            text_embedding[counter] = (glove_vector * word_idf)
+            counter += 1
 
         # add all together for the final phrase embed vector, then normalize
-        normalized_text_embedding = text_embedding/(np.sqrt((text_embedding**2).sum(keepdims = True)))
+        # normalized_text_embedding = text_embedding / (np.sqrt(list(np.sum(np.power(text_embedding, 2), keepdims=True))))
+        text_embedding = np.array(text_embedding)
+        normalized_text_embedding = text_embedding / np.sqrt(list(np.sum((text_embedding ** 2), keepdims=True))).flatten()
 
         # return normal_text_embedding
-        return normalized_text_embedding 
+        return normalized_text_embedding
     
     def get_data(self):
         """
@@ -219,30 +225,3 @@ class Coco:
             capid_to_imgid, capid_to_capstr, vocab_counts, idfs_dict
         """
         return (self.coco_data, self.glove, self.resnet18_features, self.imgid_to_capid, self.capid_to_imgid, self.capid_to_capstr, self.vocab_counts, self.idfs_dict)
-
-    """
-    EMBED_TEXT ALTERNATE CODE, IGNORE OTHERWISE
-        text_string = self.strip_punc(text_string).lower().split()
-
-        text_embedding = np.zeros((200,))
-        for word in text_string:                 
-            # if word in string is not in glove[], embedding vector is 0
-            glove_vector = np.zeros((200,))
-            word_idf = np.zeros((200,))
-            # if word in string is in glove[], get glove embedding vector                            
-            if word in self.glove:
-                glove_vector = self.glove[word]
-                if word in self.idfs_dict:
-                    word_idf = self.idfs_dict[word]
-                 else:  
-                    self.vocab_counts[word] += 1     
-                    word_idf = np.log10(len(self.coco_data["annotations"]))
-            # update text_embedding from this word's embedding vector and idf
-                text_embedding+=(glove_vector * word_idf) 
-            
-        # add all together for the final phrase embed vector, then normalize
-        #normalized_text_embedding = mg.sqrt(mg.einsum("ij, ij -> i", text_embedding, text_embedding)).reshape(-1, 1)
-        normalized_text_embedding = text_embedding/(np.sqrt((text_embedding**2).sum(keepdims = True)))
-        # return normal_text_embedding
-        return normalized_text_embedding 
-    """

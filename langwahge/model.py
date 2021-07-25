@@ -40,9 +40,13 @@ class Model:
         mygrad.Tensor, shape=(M, context_words)
             The result of passing the data through both the encoder and decoder.
         """
-        normal_this = self.encoder(x)
-        normal = mg.sqrt((normal_this**2).sum(keepdims = True))
-        return normal 
+        unit_vectors = []
+        for i in x:
+            normal_this = self.encoder(i)
+            # normal = mg.sqrt((normal_this**2).sum(keepdims = True))
+            normal = normal_this / (mg.sqrt(mg.sum(normal_this ** 2, axis=1, keepdims=True)))
+            unit_vectors.append(normal)
+        return np.array(unit_vectors)
 
     @property
     def parameters(self):
@@ -74,16 +78,15 @@ def loss_accuracy(sim_match, sim_confuse, margin, triplet_count=0):
     Tuple[Tensor, ...]
         tuple of loss and accuracy 
     """
-    loss = mg.nnet.losses.margin_ranking_loss(sim_match, sim_confuse, 1, margin) 
+    loss = mg.nnet.losses.margin_ranking_loss(sim_match, sim_confuse, 1, margin)  
     
     flat_sim_match = sim_match.flatten()                                 
     flat_sim_confuse = sim_confuse.flatten()
     
-    true_count = sum([flat_sim_match[i] > flat_sim_confuse[i] for i in range(len(flat_sim_match))])            
-    #list_to_sum = [1 if (match>confuse) else 0 for match,confuse in zip(list(flat_sim_match),list(flat_sim_confuse))]   
+    true_count = sum([flat_sim_match[i] > flat_sim_confuse[i] for i in range(len(flat_sim_match))])             
     
     acc = true_count / triplet_count
-    #acc = sum(list_to_sum)/triplet_count
+
     return loss, acc
 
 def save_weights(model):
